@@ -62,6 +62,13 @@
       </div>
 
       <div class="flex items-center flex-wrap gap-2.5">
+        <input type="file" id="inputUploadJSON" accept=".json,application/json" class="hidden" onchange="carregarArquivoJSONLocal(event)" />
+        <button onclick="document.getElementById('inputUploadJSON').click()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2" title="Carregar arquivo base_dados_financeiros.json diretamente do computador">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+          <span>Carregar JSON</span>
+        </button>
         <button onclick="carregarDadosJSON(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2">
           <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -417,48 +424,85 @@
       }
     }
 
+    function processarBaseCarregada(dados, manterFiltros = false) {
+      if (!Array.isArray(dados)) {
+        throw new Error('O arquivo JSON deve conter um array [ ... ] na raiz.');
+      }
+
+      lancamentosFinanceiros = dados.map(item => ({
+        ...item,
+        valor: Number(item.valor) || 0,
+        grupo_dre: classificarGrupoDRE(item)
+      }));
+
+      const alerta = document.getElementById('alertaErroJSON');
+      alerta.classList.add('hidden');
+      alerta.innerHTML = '';
+
+      const filtrosAnteriores = {
+        mes: document.getElementById('filtroMes').value,
+        centro: document.getElementById('filtroCentroCusto').value,
+        tipo: document.getElementById('filtroTipoGasto').value,
+        natureza: document.getElementById('filtroNatureza').value
+      };
+
+      inicializarFiltros();
+
+      if (manterFiltros) {
+        restaurarSeExistir('filtroMes', filtrosAnteriores.mes);
+        restaurarSeExistir('filtroCentroCusto', filtrosAnteriores.centro);
+        restaurarSeExistir('filtroTipoGasto', filtrosAnteriores.tipo);
+        restaurarSeExistir('filtroNatureza', filtrosAnteriores.natureza);
+      }
+
+      atualizarDashboard();
+    }
+
+    function carregarArquivoJSONLocal(event) {
+      const arquivo = event.target.files[0];
+      if (!arquivo) return;
+      const alerta = document.getElementById('alertaErroJSON');
+      const leitor = new FileReader();
+      leitor.onload = (e) => {
+        try {
+          const textoLimpo = e.target.result.replace(/^\uFEFF/, '');
+          const dados = JSON.parse(textoLimpo);
+          processarBaseCarregada(dados, false);
+        } catch (err) {
+          alerta.innerHTML = `<strong>Erro ao ler o arquivo selecionado (${arquivo.name}):</strong> ${err.message}`;
+          alerta.classList.remove('hidden');
+        }
+      };
+      leitor.readAsText(arquivo, 'UTF-8');
+    }
+
     async function carregarDadosJSON(manterFiltros = false) {
       const alerta = document.getElementById('alertaErroJSON');
+      const urlAlvo = new URL('./base_dados_financeiros.json', window.location.href).href;
       try {
-        const resposta = await fetch(`./base_dados_financeiros.json?t=${Date.now()}`, {
+        if (window.location.protocol === 'file:') {
+          throw new Error('Abertura local via file:// bloqueia leitura automática (CORS). Clique em "Carregar JSON" acima para selecionar o arquivo base_dados_financeiros.json.');
+        }
+        const resposta = await fetch(`${urlAlvo}?t=${Date.now()}`, {
           cache: 'no-store'
         });
         if (!resposta.ok) {
-          throw new Error(`HTTP ${resposta.status} - ${resposta.statusText}`);
+          throw new Error(`Arquivo não encontrado em ${urlAlvo} (HTTP ${resposta.status}). Certifique-se de que "base_dados_financeiros.json" foi enviado para a mesma pasta raiz do repositório no GitHub.`);
         }
-        const dados = await resposta.json();
-        if (!Array.isArray(dados)) {
-          throw new Error('O arquivo base_dados_financeiros.json deve conter um array JSON na raiz.');
-        }
-
-        lancamentosFinanceiros = dados.map(item => ({
-          ...item,
-          valor: Number(item.valor) || 0,
-          grupo_dre: classificarGrupoDRE(item)
-        }));
-
-        alerta.classList.add('hidden');
-        alerta.textContent = '';
-
-        const filtrosAnteriores = {
-          mes: document.getElementById('filtroMes').value,
-          centro: document.getElementById('filtroCentroCusto').value,
-          tipo: document.getElementById('filtroTipoGasto').value,
-          natureza: document.getElementById('filtroNatureza').value
-        };
-
-        inicializarFiltros();
-
-        if (manterFiltros) {
-          restaurarSeExistir('filtroMes', filtrosAnteriores.mes);
-          restaurarSeExistir('filtroCentroCusto', filtrosAnteriores.centro);
-          restaurarSeExistir('filtroTipoGasto', filtrosAnteriores.tipo);
-          restaurarSeExistir('filtroNatureza', filtrosAnteriores.natureza);
-        }
-
-        atualizarDashboard();
+        const texto = await resposta.text();
+        const dados = JSON.parse(texto.replace(/^\uFEFF/, ''));
+        processarBaseCarregada(dados, manterFiltros);
       } catch (erro) {
-        alerta.textContent = `Erro ao carregar base_dados_financeiros.json: ${erro.message}. Verifique se o servidor HTTP (python -m http.server) está rodando na mesma pasta do arquivo JSON.`;
+        alerta.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <strong>Não foi possível carregar automaticamente o JSON:</strong> ${erro.message}
+            </div>
+            <button onclick="document.getElementById('inputUploadJSON').click()" class="bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shrink-0">
+              Selecionar base_dados_financeiros.json
+            </button>
+          </div>
+        `;
         alerta.classList.remove('hidden');
       }
     }
@@ -1074,7 +1118,7 @@
       const linhas = dadosOrdenados.map(d =>
         `${d.id};${d.data};${d.mes};"${d.grupo_dre}";"${d.descricao}";"${d.centro_custo}";"${d.tipo_gasto}";${d.natureza};${d.valor.toFixed(2).replace('.', ',')}`
       );
-      const blob = new Blob(["﻿" + cabecalho.concat(linhas).join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(["\uFEFF" + cabecalho.concat(linhas).join("\n")], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
