@@ -1074,8 +1074,7 @@
       const linhas = dadosOrdenados.map(d =>
         `${d.id};${d.data};${d.mes};"${d.grupo_dre}";"${d.descricao}";"${d.centro_custo}";"${d.tipo_gasto}";${d.natureza};${d.valor.toFixed(2).replace('.', ',')}`
       );
-      const blob = new Blob(["﻿" + cabecalho.concat(linhas).join("
-")], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(["﻿" + cabecalho.concat(linhas).join("\n")], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
