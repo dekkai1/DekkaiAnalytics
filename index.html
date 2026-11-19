@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Financeiro Executivo</title>
+  <title>FinPulse Analytics • Controladoria &amp; DRE</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #f8fafc;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
     }
     .modal-enter {
       animation: modalFadeIn 0.2s ease-out forwards;
@@ -20,6 +23,15 @@
     }
     canvas {
       cursor: pointer;
+    }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    th.sortable:hover {
+      background-color: #e2e8f0;
+      color: #0f172a;
     }
   </style>
 </head>
@@ -38,14 +50,14 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-xl font-bold tracking-tight text-white">FinPulse <span class="text-indigo-400 font-semibold">Analytics</span></h1>
             <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
-              Executive BI
+              Executive BI • Controladoria
             </span>
             <span class="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Base Sincronizada
             </span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Inteligência Financeira &amp; Rentabilidade por Contrato • Clique nos gráficos para drill-down</p>
+          <p class="text-xs text-slate-400 mt-0.5">Demonstração do Resultado (DRE), Rentabilidade por Contrato &amp; Drill-Down Analítico</p>
         </div>
       </div>
 
@@ -71,38 +83,55 @@
     <!-- Alerta de Erro no Carregamento JSON -->
     <div id="alertaErroJSON" class="hidden bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-sm"></div>
 
-    <!-- Barra de Filtros Dinâmicos -->
-    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+    <!-- Barra de Filtros Dinâmicos + Gerador de Lista de Detalhamento -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Período (Mês)</label>
-          <select id="filtroMes" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select id="filtroMes" onchange="aoAlterarFiltro(true)" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="TODOS">Todos os Meses</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Centro de Custo</label>
-          <select id="filtroCentroCusto" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select id="filtroCentroCusto" onchange="aoAlterarFiltro(true)" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="TODOS">Todos os Centros</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tipo de Gasto / Receita</label>
-          <select id="filtroTipoGasto" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select id="filtroTipoGasto" onchange="aoAlterarFiltro(true)" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="TODOS">Todas as Categorias</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Natureza</label>
-          <select id="filtroNatureza" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select id="filtroNatureza" onchange="aoAlterarFiltro(true)" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="TODOS">Receitas e Despesas</option>
             <option value="Receita">Somente Receitas</option>
             <option value="Despesa">Somente Despesas</option>
           </select>
         </div>
-        <div>
-          <button onclick="resetarFiltros()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-4 py-2 rounded-lg transition border border-slate-300">
-            Limpar Filtros
+        <div class="flex gap-2">
+          <button onclick="abrirListaDetalhamentoFiltros()" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs sm:text-sm px-3 py-2 rounded-lg transition border border-indigo-200 whitespace-nowrap" title="Abrir lista detalhada dos filtros selecionados">
+            Detalhar Filtro
+          </button>
+          <button onclick="resetarFiltros()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-3 py-2 rounded-lg transition border border-slate-300">
+            Limpar
+          </button>
+        </div>
+      </div>
+
+      <!-- Faixa dinâmica gerada pelos filtros com resumo e acesso rápido à lista de detalhamento -->
+      <div id="barraResumoFiltros" class="hidden pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+        <div class="flex items-center flex-wrap gap-2">
+          <span class="font-semibold text-slate-600 uppercase tracking-wider">Recorte Ativo:</span>
+          <div id="tagsFiltrosAtivos" class="flex items-center flex-wrap gap-1.5"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="resumoContagemFiltro" class="text-slate-500 font-medium tabular-nums"></span>
+          <button onclick="abrirListaDetalhamentoFiltros()" class="text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2">
+            Abrir Lista de Detalhamento (Pop-up) &rarr;
           </button>
         </div>
       </div>
@@ -111,24 +140,24 @@
     <!-- Cards de KPIs -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <p class="text-xs font-semibold text-slate-500 uppercase">Receita Total</p>
-        <p id="kpiReceita" class="text-2xl font-bold text-emerald-600 mt-2">R$ 0,00</p>
-        <p id="kpiQtdReceita" class="text-xs text-slate-400 mt-1">0 lançamentos</p>
+        <p class="text-xs font-semibold text-slate-500 uppercase">Receita Operacional Bruta</p>
+        <p id="kpiReceita" class="text-2xl font-bold text-emerald-600 mt-2 tabular-nums">R$ 0,00</p>
+        <p id="kpiQtdReceita" class="text-xs text-slate-400 mt-1 tabular-nums">0 lançamentos</p>
       </div>
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <p class="text-xs font-semibold text-slate-500 uppercase">Despesa Total</p>
-        <p id="kpiDespesa" class="text-2xl font-bold text-rose-600 mt-2">R$ 0,00</p>
-        <p id="kpiQtdDespesa" class="text-xs text-slate-400 mt-1">0 lançamentos</p>
+        <p class="text-xs font-semibold text-slate-500 uppercase">Custos &amp; Despesas Totais</p>
+        <p id="kpiDespesa" class="text-2xl font-bold text-rose-600 mt-2 tabular-nums">R$ 0,00</p>
+        <p id="kpiQtdDespesa" class="text-xs text-slate-400 mt-1 tabular-nums">0 lançamentos</p>
       </div>
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <p class="text-xs font-semibold text-slate-500 uppercase">Resultado Líquido</p>
-        <p id="kpiResultado" class="text-2xl font-bold text-slate-900 mt-2">R$ 0,00</p>
-        <p class="text-xs text-slate-400 mt-1">Receitas (-) Despesas</p>
+        <p class="text-xs font-semibold text-slate-500 uppercase">Resultado Líquido (DRE)</p>
+        <p id="kpiResultado" class="text-2xl font-bold text-slate-900 mt-2 tabular-nums">R$ 0,00</p>
+        <p class="text-xs text-slate-400 mt-1">Receitas (-) Custos, Despesas e Impostos</p>
       </div>
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
         <p class="text-xs font-semibold text-slate-500 uppercase">Margem Líquida</p>
-        <p id="kpiMargem" class="text-2xl font-bold text-indigo-600 mt-2">0,0%</p>
-        <p class="text-xs text-slate-400 mt-1">Eficiência operacional</p>
+        <p id="kpiMargem" class="text-2xl font-bold text-indigo-600 mt-2 tabular-nums">0,0%</p>
+        <p class="text-xs text-slate-400 mt-1">Lucratividade líquida sobre receita</p>
       </div>
     </section>
 
@@ -166,85 +195,179 @@
       </div>
     </section>
 
-    <!-- Linha 3: Detalhamento de Lançamentos em largura total -->
-    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <h2 class="text-base font-bold text-slate-800">Detalhamento de Lançamentos</h2>
-        <input type="text" id="buscaTexto" onkeyup="atualizarDashboard()" placeholder="Buscar descrição..." class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-72" />
+    <!-- Linha 3: Demonstrativo DRE & Detalhamento de Lançamentos Ordenável -->
+    <section id="secaoDetalhamento" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col space-y-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-800">Demonstração do Resultado (DRE) &amp; Lançamentos</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Alterne entre a estrutura gerencial de DRE (com Análise Vertical) e a lista analítica ordenável por coluna</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <!-- Seletor de Modo de Visualização: DRE vs Lista Ordenável -->
+          <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200">
+            <button id="btnModoDRE" onclick="alternarModoTabela('DRE')" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-indigo-700 shadow-sm transition">
+              Estrutura DRE
+            </button>
+            <button id="btnModoLista" onclick="alternarModoTabela('LISTA')" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+              Lançamentos Analíticos
+            </button>
+          </div>
+
+          <input type="text" id="buscaTexto" onkeyup="aoAlterarFiltro(false)" placeholder="Buscar descrição ou contrato..." class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-64" />
+        </div>
       </div>
-      <div class="overflow-x-auto flex-1 max-h-96">
+
+      <!-- VISÃO 1: Estrutura DRE Gerencial com grupos expansíveis -->
+      <div id="containerVisaoDRE" class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
-          <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 text-xs uppercase text-slate-500">
+          <thead class="bg-slate-900 text-white text-xs uppercase tracking-wider">
             <tr>
-              <th class="py-2.5 px-3">Data</th>
-              <th class="py-2.5 px-3">Descrição</th>
-              <th class="py-2.5 px-3">Centro de Custo</th>
-              <th class="py-2.5 px-3">Tipo</th>
-              <th class="py-2.5 px-3 text-right">Valor</th>
+              <th class="py-3 px-4 rounded-tl-lg">Estrutura da Demonstração do Resultado (DRE)</th>
+              <th class="py-3 px-4 text-center w-28">Qtd. Itens</th>
+              <th class="py-3 px-4 text-right w-40">Valor Acumulado</th>
+              <th class="py-3 px-4 text-right w-28">AV (%)</th>
+              <th class="py-3 px-4 text-center w-32 rounded-tr-lg">Ação</th>
             </tr>
           </thead>
-          <tbody id="tabelaLancamentos" class="divide-y divide-slate-100"></tbody>
+          <tbody id="tabelaDRECorpo" class="divide-y divide-slate-200"></tbody>
         </table>
+      </div>
+
+      <!-- VISÃO 2: Lista Analítica com Ordenação por Qualquer Coluna -->
+      <div id="containerVisaoLista" class="hidden space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+          <span>Clique no cabeçalho de qualquer coluna para ordenar crescente ou decrescente.</span>
+          <span id="infoOrdenacaoAtual" class="font-medium text-indigo-600">Ordenado por: Data (Decrescente)</span>
+        </div>
+        <div class="overflow-x-auto max-h-[460px] border border-slate-200 rounded-lg">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead class="bg-slate-100 sticky top-0 z-10 border-b border-slate-200 text-xs uppercase text-slate-600">
+              <tr>
+                <th onclick="ordenarTabelaPrincipal('data')" class="sortable py-3 px-3.5 w-28 whitespace-nowrap">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Data</span>
+                    <span id="sort-main-data" class="text-indigo-600 font-bold">▼</span>
+                  </div>
+                </th>
+                <th onclick="ordenarTabelaPrincipal('descricao')" class="sortable py-3 px-3.5">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Descrição</span>
+                    <span id="sort-main-descricao" class="text-slate-400">⇅</span>
+                  </div>
+                </th>
+                <th onclick="ordenarTabelaPrincipal('centro_custo')" class="sortable py-3 px-3.5 w-52">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Centro de Custo</span>
+                    <span id="sort-main-centro_custo" class="text-slate-400">⇅</span>
+                  </div>
+                </th>
+                <th onclick="ordenarTabelaPrincipal('tipo_gasto')" class="sortable py-3 px-3.5 w-48">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Categoria / DRE</span>
+                    <span id="sort-main-tipo_gasto" class="text-slate-400">⇅</span>
+                  </div>
+                </th>
+                <th onclick="ordenarTabelaPrincipal('valor')" class="sortable py-3 px-3.5 w-36 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <span id="sort-main-valor" class="text-slate-400">⇅</span>
+                    <span>Valor (R$)</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="tabelaLancamentos" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Modal Pop-up Drill-Down com Blur no Background -->
-  <div id="modalDrillDown" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-md p-4" onclick="fecharModalSeFora(event)">
-    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-3xl w-full max-h-[88vh] flex flex-col overflow-hidden modal-enter" onclick="event.stopPropagation()">
+  <!-- Modal Pop-up Drill-Down com Alinhamento Padronizado e Ordenação por Coluna -->
+  <div id="modalDrillDown" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-md p-4" onclick="fecharModalSeFora(event)">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-enter" onclick="event.stopPropagation()">
       <!-- Cabeçalho Modal -->
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-        <div>
-          <span id="modalBadge" class="text-xs uppercase tracking-wider font-semibold bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full">Detalhamento</span>
-          <h3 id="modalTitulo" class="text-lg font-bold mt-1">Título do Recorte</h3>
+      <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between gap-4 border-b border-slate-800">
+        <div class="min-w-0">
+          <span id="modalBadge" class="inline-block text-[11px] uppercase tracking-wider font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">Detalhamento</span>
+          <h3 id="modalTitulo" class="text-lg font-bold mt-1.5 truncate">Título do Recorte</h3>
         </div>
-        <button onclick="fecharModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition text-xl leading-none">&times;</button>
+        <button onclick="fecharModal()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition text-xl leading-none shrink-0" aria-label="Fechar">&times;</button>
       </div>
 
-      <!-- Mini KPIs do Recorte -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 bg-slate-50 border-b border-slate-200">
-        <div class="bg-white p-3 rounded-lg border border-slate-200">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase">Receitas</p>
-          <p id="modalReceita" class="text-base font-bold text-emerald-600 mt-0.5">R$ 0,00</p>
+      <!-- Mini KPIs do Recorte com alinhamento uniforme -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Receitas</p>
+          <p id="modalReceita" class="text-base sm:text-lg font-bold text-emerald-600 mt-1 tabular-nums">R$ 0,00</p>
         </div>
-        <div class="bg-white p-3 rounded-lg border border-slate-200">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase">Despesas</p>
-          <p id="modalDespesa" class="text-base font-bold text-rose-600 mt-0.5">R$ 0,00</p>
+        <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Despesas</p>
+          <p id="modalDespesa" class="text-base sm:text-lg font-bold text-rose-600 mt-1 tabular-nums">R$ 0,00</p>
         </div>
-        <div class="bg-white p-3 rounded-lg border border-slate-200">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase">Saldo / Impacto</p>
-          <p id="modalSaldo" class="text-base font-bold text-slate-800 mt-0.5">R$ 0,00</p>
+        <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Saldo / Impacto</p>
+          <p id="modalSaldo" class="text-base sm:text-lg font-bold text-slate-800 mt-1 tabular-nums">R$ 0,00</p>
         </div>
-        <div class="bg-white p-3 rounded-lg border border-slate-200">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase">Representatividade</p>
-          <p id="modalPercentual" class="text-base font-bold text-indigo-600 mt-0.5">0,0%</p>
+        <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Representatividade</p>
+          <p id="modalPercentual" class="text-base sm:text-lg font-bold text-indigo-600 mt-1 tabular-nums">0,0%</p>
         </div>
       </div>
 
-      <!-- Tabela Interna do Modal -->
-      <div class="p-5 overflow-y-auto flex-1">
-        <table class="w-full text-left border-collapse text-sm">
-          <thead class="bg-slate-100 text-xs uppercase text-slate-500 border-b border-slate-200">
-            <tr>
-              <th class="py-2 px-3">Data</th>
-              <th class="py-2 px-3">Descrição</th>
-              <th class="py-2 px-3">Centro de Custo</th>
-              <th class="py-2 px-3">Categoria</th>
-              <th class="py-2 px-3 text-right">Valor</th>
-            </tr>
-          </thead>
-          <tbody id="modalTabelaCorpo" class="divide-y divide-slate-100"></tbody>
-        </table>
+      <!-- Tabela Interna do Modal com cabeçalho fixo, alinhamento rigoroso e ordenação por coluna -->
+      <div class="px-6 py-4 overflow-y-auto flex-1">
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto max-h-[46vh]">
+            <table class="w-full text-left border-collapse text-sm table-fixed min-w-[680px]">
+              <thead class="bg-slate-100 sticky top-0 z-10 text-[11px] uppercase tracking-wider text-slate-600 border-b border-slate-200">
+                <tr>
+                  <th onclick="ordenarTabelaModal('data')" class="sortable py-2.5 px-3.5 w-[13%] text-left">
+                    <div class="flex items-center gap-1">
+                      <span>Data</span>
+                      <span id="sort-modal-data" class="text-indigo-600 font-bold">▼</span>
+                    </div>
+                  </th>
+                  <th onclick="ordenarTabelaModal('descricao')" class="sortable py-2.5 px-3.5 w-[33%] text-left">
+                    <div class="flex items-center gap-1">
+                      <span>Descrição</span>
+                      <span id="sort-modal-descricao" class="text-slate-400">⇅</span>
+                    </div>
+                  </th>
+                  <th onclick="ordenarTabelaModal('centro_custo')" class="sortable py-2.5 px-3.5 w-[20%] text-left">
+                    <div class="flex items-center gap-1">
+                      <span>Centro de Custo</span>
+                      <span id="sort-modal-centro_custo" class="text-slate-400">⇅</span>
+                    </div>
+                  </th>
+                  <th onclick="ordenarTabelaModal('tipo_gasto')" class="sortable py-2.5 px-3.5 w-[18%] text-left">
+                    <div class="flex items-center gap-1">
+                      <span>Categoria</span>
+                      <span id="sort-modal-tipo_gasto" class="text-slate-400">⇅</span>
+                    </div>
+                  </th>
+                  <th onclick="ordenarTabelaModal('valor')" class="sortable py-2.5 px-3.5 w-[16%] text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <span id="sort-modal-valor" class="text-slate-400">⇅</span>
+                      <span>Valor</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="modalTabelaCorpo" class="divide-y divide-slate-100 bg-white"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <!-- Rodapé Modal -->
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-        <span id="modalContador" class="text-xs text-slate-500">0 registros encontrados</span>
-        <div class="flex items-center gap-2">
-          <button id="btnAplicarFiltroModal" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+      <!-- Rodapé Modal alinhado -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span id="modalContador" class="text-xs font-medium text-slate-500 tabular-nums">0 registros encontrados</span>
+        <div class="flex items-center justify-end gap-2.5">
+          <button id="btnAplicarFiltroModal" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
             Aplicar este filtro na tela
           </button>
-          <button onclick="fecharModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+          <button onclick="fecharModal()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold px-4 py-2 rounded-lg transition">
             Fechar
           </button>
         </div>
@@ -256,6 +379,14 @@
     let lancamentosFinanceiros = [];
     let chartEvolucao, chartTipoGasto, chartCentroCusto;
     let dadosAtuaisFiltrados = [];
+    let modoVisualizacaoTabela = 'DRE'; // 'DRE' | 'LISTA'
+
+    // Estado de ordenação da tabela principal
+    let ordenacaoPrincipal = { coluna: 'data', direcao: 'desc' };
+
+    // Estado de ordenação e registros do modal
+    let modalRegistrosAtuais = [];
+    let ordenacaoModal = { coluna: 'data', direcao: 'desc' };
 
     const formatarBRL = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatarMesLabel = (mesStr) => {
@@ -263,6 +394,28 @@
       const nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       return `${nomes[parseInt(mes, 10) - 1]}/${ano}`;
     };
+
+    // Classificação contábil para estruturação de DRE
+    function classificarGrupoDRE(item) {
+      const tipo = (item.tipo_gasto || '').toLowerCase();
+      if (item.natureza === 'Receita') {
+        if (tipo.includes('financeir') || tipo.includes('rendimento') || tipo.includes('juros')) {
+          return 'RECEITAS_FINANCEIRAS';
+        }
+        return 'RECEITA_BRUTA';
+      } else {
+        if (tipo.includes('imposto') || tipo.includes('tributo') || tipo.includes('iss') || tipo.includes('pis') || tipo.includes('cofins') || tipo.includes('dedu')) {
+          return 'DEDUCOES_IMPOSTOS';
+        }
+        if (tipo.includes('subcontrat') || tipo.includes('campo') || tipo.includes('deslocamento') || tipo.includes('equipamento') || tipo.includes('operacion') || tipo.includes('insumo') || tipo.includes('custo') || tipo.includes('projeto')) {
+          return 'CUSTOS_DIRETOS';
+        }
+        if (tipo.includes('financeir') || tipo.includes('tarifa') || tipo.includes('juros') || tipo.includes('banc')) {
+          return 'DESPESAS_FINANCEIRAS';
+        }
+        return 'DESPESAS_OPERACIONAIS';
+      }
+    }
 
     async function carregarDadosJSON(manterFiltros = false) {
       const alerta = document.getElementById('alertaErroJSON');
@@ -280,7 +433,8 @@
 
         lancamentosFinanceiros = dados.map(item => ({
           ...item,
-          valor: Number(item.valor) || 0
+          valor: Number(item.valor) || 0,
+          grupo_dre: classificarGrupoDRE(item)
         }));
 
         alerta.classList.add('hidden');
@@ -333,6 +487,75 @@
       tipos.forEach(t => selTipo.innerHTML += `<option value="${t}">${t}</option>`);
     }
 
+    function aoAlterarFiltro(mudouSelect = false) {
+      atualizarDashboard();
+      // Quando o usuário altera qualquer filtro na barra, exibe automaticamente a lista analítica detalhada na tela
+      if (mudouSelect && temFiltroAtivo()) {
+        alternarModoTabela('LISTA');
+      }
+    }
+
+    function temFiltroAtivo() {
+      return (
+        document.getElementById('filtroMes').value !== 'TODOS' ||
+        document.getElementById('filtroCentroCusto').value !== 'TODOS' ||
+        document.getElementById('filtroTipoGasto').value !== 'TODOS' ||
+        document.getElementById('filtroNatureza').value !== 'TODOS' ||
+        document.getElementById('buscaTexto').value.trim() !== ''
+      );
+    }
+
+    function atualizarBarraResumoFiltros() {
+      const barra = document.getElementById('barraResumoFiltros');
+      const tagsContainer = document.getElementById('tagsFiltrosAtivos');
+      const resumoContagem = document.getElementById('resumoContagemFiltro');
+
+      const mes = document.getElementById('filtroMes').value;
+      const centro = document.getElementById('filtroCentroCusto').value;
+      const tipo = document.getElementById('filtroTipoGasto').value;
+      const natureza = document.getElementById('filtroNatureza').value;
+      const busca = document.getElementById('buscaTexto').value.trim();
+
+      const tags = [];
+      if (mes !== 'TODOS') tags.push(`Período: ${formatarMesLabel(mes)}`);
+      if (centro !== 'TODOS') tags.push(`Centro: ${centro}`);
+      if (tipo !== 'TODOS') tags.push(`Categoria: ${tipo}`);
+      if (natureza !== 'TODOS') tags.push(`Natureza: ${natureza}`);
+      if (busca) tags.push(`Busca: "${busca}"`);
+
+      if (tags.length === 0) {
+        barra.classList.add('hidden');
+        return;
+      }
+
+      barra.classList.remove('hidden');
+      tagsContainer.innerHTML = tags.map(t =>
+        `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full font-medium">${t}</span>`
+      ).join('');
+      resumoContagem.textContent = `${dadosAtuaisFiltrados.length} lançamento(s) filtrados`;
+    }
+
+    function abrirListaDetalhamentoFiltros() {
+      const mes = document.getElementById('filtroMes').value;
+      const centro = document.getElementById('filtroCentroCusto').value;
+      const tipo = document.getElementById('filtroTipoGasto').value;
+      const natureza = document.getElementById('filtroNatureza').value;
+
+      const partes = [];
+      if (mes !== 'TODOS') partes.push(formatarMesLabel(mes));
+      if (centro !== 'TODOS') partes.push(centro);
+      if (tipo !== 'TODOS') partes.push(tipo);
+      if (natureza !== 'TODOS') partes.push(natureza);
+
+      const titulo = partes.length > 0 ? partes.join(' • ') : 'Todos os Lançamentos da Base';
+      const totalDespBase = dadosAtuaisFiltrados.filter(d => d.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0);
+
+      abrirModalDrillDown('Lista de Detalhamento (Filtro)', titulo, dadosAtuaisFiltrados, totalDespBase, () => {
+        alternarModoTabela('LISTA');
+        document.getElementById('secaoDetalhamento').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
     function resetarFiltros() {
       document.getElementById('filtroMes').value = 'TODOS';
       document.getElementById('filtroCentroCusto').value = 'TODOS';
@@ -354,13 +577,102 @@
         if (centro !== 'TODOS' && item.centro_custo !== centro) return false;
         if (tipo !== 'TODOS' && item.tipo_gasto !== tipo) return false;
         if (natureza !== 'TODOS' && item.natureza !== natureza) return false;
-        if (busca && !item.descricao.toLowerCase().includes(busca)) return false;
+        if (busca && !item.descricao.toLowerCase().includes(busca) && !item.centro_custo.toLowerCase().includes(busca)) return false;
         return true;
       });
     }
 
+    function alternarModoTabela(modo) {
+      modoVisualizacaoTabela = modo;
+      const containerDRE = document.getElementById('containerVisaoDRE');
+      const containerLista = document.getElementById('containerVisaoLista');
+      const btnDRE = document.getElementById('btnModoDRE');
+      const btnLista = document.getElementById('btnModoLista');
+
+      if (modo === 'DRE') {
+        containerDRE.classList.remove('hidden');
+        containerLista.classList.add('hidden');
+        btnDRE.className = 'px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-indigo-700 shadow-sm transition';
+        btnLista.className = 'px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+      } else {
+        containerDRE.classList.add('hidden');
+        containerLista.classList.remove('hidden');
+        btnLista.className = 'px-3 py-1.5 text-xs font-semibold rounded-md bg-white text-indigo-700 shadow-sm transition';
+        btnDRE.className = 'px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+      }
+    }
+
+    function aplicarOrdenacao(lista, coluna, direcao) {
+      const fator = direcao === 'asc' ? 1 : -1;
+      return [...lista].sort((a, b) => {
+        if (coluna === 'valor') {
+          const valA = a.natureza === 'Receita' ? a.valor : -a.valor;
+          const valB = b.natureza === 'Receita' ? b.valor : -b.valor;
+          return (valA - valB) * fator;
+        }
+        const strA = String(a[coluna] || '').toLowerCase();
+        const strB = String(b[coluna] || '').toLowerCase();
+        return strA.localeCompare(strB, 'pt-BR') * fator;
+      });
+    }
+
+    function ordenarTabelaPrincipal(coluna) {
+      if (ordenacaoPrincipal.coluna === coluna) {
+        ordenacaoPrincipal.direcao = ordenacaoPrincipal.direcao === 'asc' ? 'desc' : 'asc';
+      } else {
+        ordenacaoPrincipal.coluna = coluna;
+        ordenacaoPrincipal.direcao = coluna === 'valor' || coluna === 'data' ? 'desc' : 'asc';
+      }
+
+      const nomesColunas = {
+        data: 'Data',
+        descricao: 'Descrição',
+        centro_custo: 'Centro de Custo',
+        tipo_gasto: 'Categoria',
+        valor: 'Valor (R$)'
+      };
+      const dirTexto = ordenacaoPrincipal.direcao === 'asc' ? 'Crescente' : 'Decrescente';
+      document.getElementById('infoOrdenacaoAtual').textContent = `Ordenado por: ${nomesColunas[coluna]} (${dirTexto})`;
+
+      ['data', 'descricao', 'centro_custo', 'tipo_gasto', 'valor'].forEach(col => {
+        const el = document.getElementById(`sort-main-${col}`);
+        if (col === ordenacaoPrincipal.coluna) {
+          el.textContent = ordenacaoPrincipal.direcao === 'asc' ? '▲' : '▼';
+          el.className = 'text-indigo-600 font-bold';
+        } else {
+          el.textContent = '⇅';
+          el.className = 'text-slate-400';
+        }
+      });
+
+      atualizarTabelaAnalitica(dadosAtuaisFiltrados);
+    }
+
+    function ordenarTabelaModal(coluna) {
+      if (ordenacaoModal.coluna === coluna) {
+        ordenacaoModal.direcao = ordenacaoModal.direcao === 'asc' ? 'desc' : 'asc';
+      } else {
+        ordenacaoModal.coluna = coluna;
+        ordenacaoModal.direcao = coluna === 'valor' || coluna === 'data' ? 'desc' : 'asc';
+      }
+
+      ['data', 'descricao', 'centro_custo', 'tipo_gasto', 'valor'].forEach(col => {
+        const el = document.getElementById(`sort-modal-${col}`);
+        if (col === ordenacaoModal.coluna) {
+          el.textContent = ordenacaoModal.direcao === 'asc' ? '▲' : '▼';
+          el.className = 'text-indigo-600 font-bold';
+        } else {
+          el.textContent = '⇅';
+          el.className = 'text-slate-400';
+        }
+      });
+
+      renderizarCorpoTabelaModal();
+    }
+
     function atualizarDashboard() {
       dadosAtuaisFiltrados = obterDadosFiltrados();
+      atualizarBarraResumoFiltros();
 
       // KPIs
       const receitas = dadosAtuaisFiltrados.filter(d => d.natureza === 'Receita');
@@ -377,29 +689,163 @@
 
       const elResultado = document.getElementById('kpiResultado');
       elResultado.textContent = formatarBRL(resultado);
-      elResultado.className = `text-2xl font-bold mt-2 ${resultado >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+      elResultado.className = `text-2xl font-bold mt-2 tabular-nums ${resultado >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
 
       const elMargem = document.getElementById('kpiMargem');
       elMargem.textContent = `${margem.toFixed(1)}%`;
-      elMargem.className = `text-2xl font-bold mt-2 ${margem >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
+      elMargem.className = `text-2xl font-bold mt-2 tabular-nums ${margem >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
 
-      atualizarTabela(dadosAtuaisFiltrados);
+      renderizarEstruturaDRE(dadosAtuaisFiltrados);
+      atualizarTabelaAnalitica(dadosAtuaisFiltrados);
       atualizarGraficos(dadosAtuaisFiltrados, totalDespesa);
     }
 
-    function atualizarTabela(dados) {
-      const tbody = document.getElementById('tabelaLancamentos');
+    function renderizarEstruturaDRE(dados) {
+      const tbody = document.getElementById('tabelaDRECorpo');
       if (dados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nenhum lançamento encontrado para os filtros aplicados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Nenhum lançamento encontrado para compor a DRE nos filtros aplicados.</td></tr>`;
         return;
       }
-      tbody.innerHTML = dados.map(d => `
+
+      const grupos = {
+        RECEITA_BRUTA: dados.filter(d => d.grupo_dre === 'RECEITA_BRUTA'),
+        DEDUCOES_IMPOSTOS: dados.filter(d => d.grupo_dre === 'DEDUCOES_IMPOSTOS'),
+        CUSTOS_DIRETOS: dados.filter(d => d.grupo_dre === 'CUSTOS_DIRETOS'),
+        DESPESAS_OPERACIONAIS: dados.filter(d => d.grupo_dre === 'DESPESAS_OPERACIONAIS'),
+        RECEITAS_FINANCEIRAS: dados.filter(d => d.grupo_dre === 'RECEITAS_FINANCEIRAS'),
+        DESPESAS_FINANCEIRAS: dados.filter(d => d.grupo_dre === 'DESPESAS_FINANCEIRAS')
+      };
+
+      const soma = (arr) => arr.reduce((acc, item) => acc + item.valor, 0);
+
+      const valRecBruta = soma(grupos.RECEITA_BRUTA);
+      const valDeducoes = soma(grupos.DEDUCOES_IMPOSTOS);
+      const valRecLiquida = valRecBruta - valDeducoes;
+      const valCustos = soma(grupos.CUSTOS_DIRETOS);
+      const valLucroBruto = valRecLiquida - valCustos;
+      const valDespOp = soma(grupos.DESPESAS_OPERACIONAIS);
+      const valEbitda = valLucroBruto - valDespOp;
+      const valRecFin = soma(grupos.RECEITAS_FINANCEIRAS);
+      const valDespFin = soma(grupos.DESPESAS_FINANCEIRAS);
+      const valResLiquido = valEbitda + valRecFin - valDespFin;
+
+      const baseAV = valRecBruta > 0 ? valRecBruta : (valRecLiquida > 0 ? valRecLiquida : 1);
+      const fmtAV = (v) => valRecBruta > 0 ? `${((v / baseAV) * 100).toFixed(1)}%` : '—';
+
+      const agruparSubcategorias = (arr) => {
+        const map = {};
+        arr.forEach(item => {
+          if (!map[item.tipo_gasto]) map[item.tipo_gasto] = [];
+          map[item.tipo_gasto].push(item);
+        });
+        return Object.entries(map).sort((a, b) => soma(b[1]) - soma(a[1]));
+      };
+
+      window.__dreBuckets = {};
+      let bucketIdx = 0;
+      const registrarBucket = (titulo, registros) => {
+        const key = `dre_${bucketIdx++}`;
+        window.__dreBuckets[key] = { titulo, registros };
+        return key;
+      };
+
+      const renderLinhaGrupo = (codigo, titulo, arr, sinal, corValor) => {
+        const total = soma(arr);
+        const key = registrarBucket(`${codigo} ${titulo}`, arr);
+        const subcategorias = agruparSubcategorias(arr);
+
+        let htmlGrupo = `
+          <tr class="bg-white hover:bg-slate-50 font-semibold text-slate-800">
+            <td class="py-3 px-4">${codigo} ${titulo}</td>
+            <td class="py-3 px-4 text-center text-xs text-slate-500 tabular-nums">${arr.length}</td>
+            <td class="py-3 px-4 text-right tabular-nums ${corValor}">${sinal === '-' && total > 0 ? '- ' : ''}${formatarBRL(total)}</td>
+            <td class="py-3 px-4 text-right text-xs text-slate-500 tabular-nums">${fmtAV(sinal === '-' ? -total : total)}</td>
+            <td class="py-3 px-4 text-center">
+              ${arr.length > 0 ? `<button onclick="abrirDrillDownDRE('${key}')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">Detalhar</button>` : '<span class="text-xs text-slate-300">—</span>'}
+            </td>
+          </tr>
+        `;
+
+        subcategorias.forEach(([subNome, subItens]) => {
+          const subTotal = soma(subItens);
+          const subKey = registrarBucket(`${codigo} ${titulo} • ${subNome}`, subItens);
+          htmlGrupo += `
+            <tr class="bg-slate-50/60 hover:bg-slate-100/70 text-slate-600 text-xs">
+              <td class="py-2 pl-9 pr-4 flex items-center gap-2">
+                <span class="text-slate-400">↳</span>
+                <span>${subNome}</span>
+              </td>
+              <td class="py-2 px-4 text-center text-slate-400 tabular-nums">${subItens.length}</td>
+              <td class="py-2 px-4 text-right tabular-nums ${sinal === '-' ? 'text-rose-600' : 'text-emerald-600'}">${sinal === '-' ? '- ' : ''}${formatarBRL(subTotal)}</td>
+              <td class="py-2 px-4 text-right text-slate-400 tabular-nums">${fmtAV(sinal === '-' ? -subTotal : subTotal)}</td>
+              <td class="py-2 px-4 text-center">
+                <button onclick="abrirDrillDownDRE('${subKey}')" class="text-[11px] font-medium text-slate-600 hover:text-indigo-700 underline underline-offset-2">Ver itens</button>
+              </td>
+            </tr>
+          `;
+        });
+
+        return htmlGrupo;
+      };
+
+      const renderLinhaSubtotal = (titulo, valor, destaqueFinal = false) => {
+        const cor = valor >= 0 ? 'text-emerald-700' : 'text-rose-700';
+        const bg = destaqueFinal ? 'bg-slate-900 text-white font-bold' : 'bg-slate-100/90 text-slate-900 font-bold border-y border-slate-200';
+        const corValorFinal = destaqueFinal ? (valor >= 0 ? 'text-emerald-400' : 'text-rose-400') : cor;
+        return `
+          <tr class="${bg}">
+            <td class="py-3 px-4">${titulo}</td>
+            <td class="py-3 px-4 text-center text-xs opacity-70">—</td>
+            <td class="py-3 px-4 text-right tabular-nums ${corValorFinal}">${formatarBRL(valor)}</td>
+            <td class="py-3 px-4 text-right text-xs tabular-nums ${destaqueFinal ? 'text-slate-300' : 'text-slate-600'}">${fmtAV(valor)}</td>
+            <td class="py-3 px-4 text-center text-xs opacity-60">Subtotal</td>
+          </tr>
+        `;
+      };
+
+      let linhasDRE = '';
+      linhasDRE += renderLinhaGrupo('1.', 'Receita Operacional Bruta', grupos.RECEITA_BRUTA, '+', 'text-emerald-600');
+      linhasDRE += renderLinhaGrupo('2. (-)', 'Deduções e Impostos sobre Receita', grupos.DEDUCOES_IMPOSTOS, '-', 'text-rose-600');
+      linhasDRE += renderLinhaSubtotal('(=) Receita Operacional Líquida', valRecLiquida);
+      linhasDRE += renderLinhaGrupo('3. (-)', 'Custos Diretos dos Serviços / Contratos', grupos.CUSTOS_DIRETOS, '-', 'text-rose-600');
+      linhasDRE += renderLinhaSubtotal('(=) Lucro Bruto / Margem de Contribuição', valLucroBruto);
+      linhasDRE += renderLinhaGrupo('4. (-)', 'Despesas Operacionais e Administrativas', grupos.DESPESAS_OPERACIONAIS, '-', 'text-rose-600');
+      linhasDRE += renderLinhaSubtotal('(=) Resultado Operacional (EBITDA)', valEbitda);
+      if (grupos.RECEITAS_FINANCEIRAS.length > 0) {
+        linhasDRE += renderLinhaGrupo('5. (+)', 'Receitas Financeiras', grupos.RECEITAS_FINANCEIRAS, '+', 'text-emerald-600');
+      }
+      if (grupos.DESPESAS_FINANCEIRAS.length > 0) {
+        linhasDRE += renderLinhaGrupo('6. (-)', 'Despesas Financeiras', grupos.DESPESAS_FINANCEIRAS, '-', 'text-rose-600');
+      }
+      linhasDRE += renderLinhaSubtotal('(=) Resultado Líquido do Exercício', valResLiquido, true);
+
+      tbody.innerHTML = linhasDRE;
+    }
+
+    function abrirDrillDownDRE(key) {
+      const bucket = window.__dreBuckets[key];
+      if (!bucket) return;
+      const totalDespBase = dadosAtuaisFiltrados.filter(d => d.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0);
+      abrirModalDrillDown('Linha da DRE', bucket.titulo, bucket.registros, totalDespBase, () => {
+        alternarModoTabela('LISTA');
+      });
+    }
+
+    function atualizarTabelaAnalitica(dados) {
+      const tbody = document.getElementById('tabelaLancamentos');
+      if (dados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Nenhum lançamento encontrado para os filtros aplicados.</td></tr>`;
+        return;
+      }
+
+      const dadosOrdenados = aplicarOrdenacao(dados, ordenacaoPrincipal.coluna, ordenacaoPrincipal.direcao);
+      tbody.innerHTML = dadosOrdenados.map(d => `
         <tr class="hover:bg-slate-50 transition">
-          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${d.data.split('-').reverse().join('/')}</td>
-          <td class="py-2.5 px-3 font-medium text-slate-800">${d.descricao}</td>
-          <td class="py-2.5 px-3 text-slate-600">${d.centro_custo}</td>
-          <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${d.tipo_gasto}</span></td>
-          <td class="py-2.5 px-3 text-right font-semibold whitespace-nowrap ${d.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
+          <td class="py-2.5 px-3.5 text-slate-500 whitespace-nowrap tabular-nums">${d.data.split('-').reverse().join('/')}</td>
+          <td class="py-2.5 px-3.5 font-medium text-slate-800">${d.descricao}</td>
+          <td class="py-2.5 px-3.5 text-slate-600">${d.centro_custo}</td>
+          <td class="py-2.5 px-3.5"><span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">${d.tipo_gasto}</span></td>
+          <td class="py-2.5 px-3.5 text-right font-semibold whitespace-nowrap tabular-nums ${d.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
             ${d.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(d.valor)}
           </td>
         </tr>
@@ -448,7 +894,7 @@
             abrirModalDrillDown('Evolução Mensal', subtitulo, registros, totalDespesaGlobal, () => {
               document.getElementById('filtroMes').value = mesSelecionado;
               document.getElementById('filtroNatureza').value = naturezaFiltro;
-              atualizarDashboard();
+              aoAlterarFiltro(true);
             });
           },
           plugins: { legend: { position: 'top' } },
@@ -485,7 +931,7 @@
             abrirModalDrillDown('Tipo de Gasto', tipoSel, registros, totalDespesaGlobal, () => {
               document.getElementById('filtroTipoGasto').value = tipoSel;
               document.getElementById('filtroNatureza').value = 'Despesa';
-              atualizarDashboard();
+              aoAlterarFiltro(true);
             });
           },
           plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
@@ -528,7 +974,7 @@
             abrirModalDrillDown('Resultado por Centro de Custo', centroSel, registros, totalDespesaGlobal, () => {
               document.getElementById('filtroCentroCusto').value = centroSel;
               document.getElementById('filtroNatureza').value = 'TODOS';
-              atualizarDashboard();
+              aoAlterarFiltro(true);
             });
           },
           plugins: {
@@ -543,9 +989,43 @@
       });
     }
 
+    function renderizarCorpoTabelaModal() {
+      const tbody = document.getElementById('modalTabelaCorpo');
+      if (modalRegistrosAtuais.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Nenhum lançamento encontrado neste recorte.</td></tr>`;
+        return;
+      }
+
+      const ordenados = aplicarOrdenacao(modalRegistrosAtuais, ordenacaoModal.coluna, ordenacaoModal.direcao);
+      tbody.innerHTML = ordenados.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3.5 text-slate-500 whitespace-nowrap tabular-nums align-middle">${r.data.split('-').reverse().join('/')}</td>
+          <td class="py-2.5 px-3.5 font-medium text-slate-800 align-middle truncate" title="${r.descricao}">${r.descricao}</td>
+          <td class="py-2.5 px-3.5 text-slate-600 align-middle truncate" title="${r.centro_custo}">${r.centro_custo}</td>
+          <td class="py-2.5 px-3.5 text-slate-500 text-xs align-middle truncate" title="${r.tipo_gasto}">${r.tipo_gasto}</td>
+          <td class="py-2.5 px-3.5 text-right font-semibold whitespace-nowrap tabular-nums align-middle ${r.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
+            ${r.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(r.valor)}
+          </td>
+        </tr>
+      `).join('');
+    }
+
     function abrirModalDrillDown(badge, titulo, registros, baseComparacao, callbackAplicarFiltro) {
       document.getElementById('modalBadge').textContent = badge;
       document.getElementById('modalTitulo').textContent = titulo;
+
+      modalRegistrosAtuais = [...registros];
+      ordenacaoModal = { coluna: 'data', direcao: 'desc' };
+      ['data', 'descricao', 'centro_custo', 'tipo_gasto', 'valor'].forEach(col => {
+        const el = document.getElementById(`sort-modal-${col}`);
+        if (col === 'data') {
+          el.textContent = '▼';
+          el.className = 'text-indigo-600 font-bold';
+        } else {
+          el.textContent = '⇅';
+          el.className = 'text-slate-400';
+        }
+      });
 
       const rec = registros.filter(r => r.natureza === 'Receita').reduce((a, b) => a + b.valor, 0);
       const desp = registros.filter(r => r.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0);
@@ -554,22 +1034,15 @@
 
       document.getElementById('modalReceita').textContent = formatarBRL(rec);
       document.getElementById('modalDespesa').textContent = formatarBRL(desp);
-      document.getElementById('modalSaldo').textContent = formatarBRL(saldo);
-      document.getElementById('modalPercentual').textContent = `${pct.toFixed(1)}%`;
-      document.getElementById('modalContador').textContent = `${registros.length} lançamento(s) neste recorte`;
 
-      const tbody = document.getElementById('modalTabelaCorpo');
-      tbody.innerHTML = registros.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.data.split('-').reverse().join('/')}</td>
-          <td class="py-2 px-3 font-medium text-slate-800">${r.descricao}</td>
-          <td class="py-2 px-3 text-slate-600">${r.centro_custo}</td>
-          <td class="py-2 px-3 text-slate-500 text-xs">${r.tipo_gasto}</td>
-          <td class="py-2 px-3 text-right font-semibold whitespace-nowrap ${r.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
-            ${r.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(r.valor)}
-          </td>
-        </tr>
-      `).join('');
+      const elModalSaldo = document.getElementById('modalSaldo');
+      elModalSaldo.textContent = formatarBRL(saldo);
+      elModalSaldo.className = `text-base sm:text-lg font-bold mt-1 tabular-nums ${saldo >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+
+      document.getElementById('modalPercentual').textContent = `${pct.toFixed(1)}%`;
+      document.getElementById('modalContador').textContent = `${registros.length} lançamento(s) neste recorte • Clique nas colunas para ordenar`;
+
+      renderizarCorpoTabelaModal();
 
       document.getElementById('btnAplicarFiltroModal').onclick = () => {
         callbackAplicarFiltro();
@@ -596,15 +1069,17 @@
     });
 
     function exportarCSV() {
-      const cabecalho = ['ID;Data;Mes;Descricao;Centro_Custo;Tipo_Gasto;Natureza;Valor'];
-      const linhas = dadosAtuaisFiltrados.map(d =>
-        `${d.id};${d.data};${d.mes};"${d.descricao}";"${d.centro_custo}";"${d.tipo_gasto}";${d.natureza};${d.valor.toFixed(2).replace('.', ',')}`
+      const cabecalho = ['ID;Data;Mes;Grupo_DRE;Descricao;Centro_Custo;Tipo_Gasto;Natureza;Valor'];
+      const dadosOrdenados = aplicarOrdenacao(dadosAtuaisFiltrados, ordenacaoPrincipal.coluna, ordenacaoPrincipal.direcao);
+      const linhas = dadosOrdenados.map(d =>
+        `${d.id};${d.data};${d.mes};"${d.grupo_dre}";"${d.descricao}";"${d.centro_custo}";"${d.tipo_gasto}";${d.natureza};${d.valor.toFixed(2).replace('.', ',')}`
       );
-      const blob = new Blob(["\uFEFF" + cabecalho.concat(linhas).join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(["﻿" + cabecalho.concat(linhas).join("
+")], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'indicadores_financeiros_filtrado.csv';
+      a.download = 'indicadores_financeiros_dre_filtrado.csv';
       a.click();
     }
 
