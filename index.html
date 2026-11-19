@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Financeiro Executivo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+    }
+    .modal-enter {
+      animation: modalFadeIn 0.2s ease-out forwards;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    canvas {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+  <!-- Cabeçalho SaaS Executivo -->
+  <header class="bg-slate-950 text-white border-b border-slate-800/80 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 class="text-xl font-bold tracking-tight text-white">FinPulse <span class="text-indigo-400 font-semibold">Analytics</span></h1>
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
+              Executive BI
+            </span>
+            <span class="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Base Sincronizada
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Inteligência Financeira &amp; Rentabilidade por Contrato • Clique nos gráficos para drill-down</p>
+        </div>
+      </div>
+
+      <div class="flex items-center flex-wrap gap-2.5">
+        <button onclick="carregarDadosJSON(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+          <span>Atualizar Base</span>
+        </button>
+        <button onclick="exportarCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm shadow-indigo-600/25 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          <span>Exportar Relatório CSV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Alerta de Erro no Carregamento JSON -->
+    <div id="alertaErroJSON" class="hidden bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-sm"></div>
+
+    <!-- Barra de Filtros Dinâmicos -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Período (Mês)</label>
+          <select id="filtroMes" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="TODOS">Todos os Meses</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Centro de Custo</label>
+          <select id="filtroCentroCusto" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="TODOS">Todos os Centros</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tipo de Gasto / Receita</label>
+          <select id="filtroTipoGasto" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="TODOS">Todas as Categorias</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Natureza</label>
+          <select id="filtroNatureza" onchange="atualizarDashboard()" class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="TODOS">Receitas e Despesas</option>
+            <option value="Receita">Somente Receitas</option>
+            <option value="Despesa">Somente Despesas</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetarFiltros()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-4 py-2 rounded-lg transition border border-slate-300">
+            Limpar Filtros
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cards de KPIs -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase">Receita Total</p>
+        <p id="kpiReceita" class="text-2xl font-bold text-emerald-600 mt-2">R$ 0,00</p>
+        <p id="kpiQtdReceita" class="text-xs text-slate-400 mt-1">0 lançamentos</p>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase">Despesa Total</p>
+        <p id="kpiDespesa" class="text-2xl font-bold text-rose-600 mt-2">R$ 0,00</p>
+        <p id="kpiQtdDespesa" class="text-xs text-slate-400 mt-1">0 lançamentos</p>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase">Resultado Líquido</p>
+        <p id="kpiResultado" class="text-2xl font-bold text-slate-900 mt-2">R$ 0,00</p>
+        <p class="text-xs text-slate-400 mt-1">Receitas (-) Despesas</p>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase">Margem Líquida</p>
+        <p id="kpiMargem" class="text-2xl font-bold text-indigo-600 mt-2">0,0%</p>
+        <p class="text-xs text-slate-400 mt-1">Eficiência operacional</p>
+      </div>
+    </section>
+
+    <!-- Linha 1: Evolução Mensal em largura total -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold text-slate-800">Evolução Mensal (Receitas vs. Despesas)</h2>
+        <span class="text-xs text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full font-medium">Clique nas barras/linha para detalhar</span>
+      </div>
+      <div class="h-80">
+        <canvas id="graficoEvolucao"></canvas>
+      </div>
+    </section>
+
+    <!-- Linha 2: Despesas por Tipo de Gasto (1/3) + Resultado por Centro de Custo ampliado (2/3) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-800">Despesas por Tipo de Gasto</h2>
+          <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Interativo</span>
+        </div>
+        <div class="h-80 flex items-center justify-center">
+          <canvas id="graficoTipoGasto"></canvas>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-800">Resultado por Centro de Custo</h2>
+          <span class="text-xs text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full font-medium">Clique para confrontar receitas e despesas</span>
+        </div>
+        <div class="h-80">
+          <canvas id="graficoCentroCusto"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Linha 3: Detalhamento de Lançamentos em largura total -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <h2 class="text-base font-bold text-slate-800">Detalhamento de Lançamentos</h2>
+        <input type="text" id="buscaTexto" onkeyup="atualizarDashboard()" placeholder="Buscar descrição..." class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-72" />
+      </div>
+      <div class="overflow-x-auto flex-1 max-h-96">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 text-xs uppercase text-slate-500">
+            <tr>
+              <th class="py-2.5 px-3">Data</th>
+              <th class="py-2.5 px-3">Descrição</th>
+              <th class="py-2.5 px-3">Centro de Custo</th>
+              <th class="py-2.5 px-3">Tipo</th>
+              <th class="py-2.5 px-3 text-right">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaLancamentos" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Pop-up Drill-Down com Blur no Background -->
+  <div id="modalDrillDown" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-md p-4" onclick="fecharModalSeFora(event)">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-3xl w-full max-h-[88vh] flex flex-col overflow-hidden modal-enter" onclick="event.stopPropagation()">
+      <!-- Cabeçalho Modal -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <span id="modalBadge" class="text-xs uppercase tracking-wider font-semibold bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full">Detalhamento</span>
+          <h3 id="modalTitulo" class="text-lg font-bold mt-1">Título do Recorte</h3>
+        </div>
+        <button onclick="fecharModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition text-xl leading-none">&times;</button>
+      </div>
+
+      <!-- Mini KPIs do Recorte -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 bg-slate-50 border-b border-slate-200">
+        <div class="bg-white p-3 rounded-lg border border-slate-200">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Receitas</p>
+          <p id="modalReceita" class="text-base font-bold text-emerald-600 mt-0.5">R$ 0,00</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Despesas</p>
+          <p id="modalDespesa" class="text-base font-bold text-rose-600 mt-0.5">R$ 0,00</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Saldo / Impacto</p>
+          <p id="modalSaldo" class="text-base font-bold text-slate-800 mt-0.5">R$ 0,00</p>
+        </div>
+        <div class="bg-white p-3 rounded-lg border border-slate-200">
+          <p class="text-[11px] font-semibold text-slate-400 uppercase">Representatividade</p>
+          <p id="modalPercentual" class="text-base font-bold text-indigo-600 mt-0.5">0,0%</p>
+        </div>
+      </div>
+
+      <!-- Tabela Interna do Modal -->
+      <div class="p-5 overflow-y-auto flex-1">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead class="bg-slate-100 text-xs uppercase text-slate-500 border-b border-slate-200">
+            <tr>
+              <th class="py-2 px-3">Data</th>
+              <th class="py-2 px-3">Descrição</th>
+              <th class="py-2 px-3">Centro de Custo</th>
+              <th class="py-2 px-3">Categoria</th>
+              <th class="py-2 px-3 text-right">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="modalTabelaCorpo" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <!-- Rodapé Modal -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span id="modalContador" class="text-xs text-slate-500">0 registros encontrados</span>
+        <div class="flex items-center gap-2">
+          <button id="btnAplicarFiltroModal" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+            Aplicar este filtro na tela
+          </button>
+          <button onclick="fecharModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let lancamentosFinanceiros = [];
+    let chartEvolucao, chartTipoGasto, chartCentroCusto;
+    let dadosAtuaisFiltrados = [];
+
+    const formatarBRL = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const formatarMesLabel = (mesStr) => {
+      const [ano, mes] = mesStr.split('-');
+      const nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      return `${nomes[parseInt(mes, 10) - 1]}/${ano}`;
+    };
+
+    async function carregarDadosJSON(manterFiltros = false) {
+      const alerta = document.getElementById('alertaErroJSON');
+      try {
+        const resposta = await fetch(`./base_dados_financeiros.json?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (!resposta.ok) {
+          throw new Error(`HTTP ${resposta.status} - ${resposta.statusText}`);
+        }
+        const dados = await resposta.json();
+        if (!Array.isArray(dados)) {
+          throw new Error('O arquivo base_dados_financeiros.json deve conter um array JSON na raiz.');
+        }
+
+        lancamentosFinanceiros = dados.map(item => ({
+          ...item,
+          valor: Number(item.valor) || 0
+        }));
+
+        alerta.classList.add('hidden');
+        alerta.textContent = '';
+
+        const filtrosAnteriores = {
+          mes: document.getElementById('filtroMes').value,
+          centro: document.getElementById('filtroCentroCusto').value,
+          tipo: document.getElementById('filtroTipoGasto').value,
+          natureza: document.getElementById('filtroNatureza').value
+        };
+
+        inicializarFiltros();
+
+        if (manterFiltros) {
+          restaurarSeExistir('filtroMes', filtrosAnteriores.mes);
+          restaurarSeExistir('filtroCentroCusto', filtrosAnteriores.centro);
+          restaurarSeExistir('filtroTipoGasto', filtrosAnteriores.tipo);
+          restaurarSeExistir('filtroNatureza', filtrosAnteriores.natureza);
+        }
+
+        atualizarDashboard();
+      } catch (erro) {
+        alerta.textContent = `Erro ao carregar base_dados_financeiros.json: ${erro.message}. Verifique se o servidor HTTP (python -m http.server) está rodando na mesma pasta do arquivo JSON.`;
+        alerta.classList.remove('hidden');
+      }
+    }
+
+    function restaurarSeExistir(selectId, valor) {
+      const select = document.getElementById(selectId);
+      const existe = [...select.options].some(opt => opt.value === valor);
+      select.value = existe ? valor : 'TODOS';
+    }
+
+    function inicializarFiltros() {
+      const meses = [...new Set(lancamentosFinanceiros.map(d => d.mes))].sort();
+      const centros = [...new Set(lancamentosFinanceiros.map(d => d.centro_custo))].sort();
+      const tipos = [...new Set(lancamentosFinanceiros.map(d => d.tipo_gasto))].sort();
+
+      const selMes = document.getElementById('filtroMes');
+      selMes.innerHTML = '<option value="TODOS">Todos os Meses</option>';
+      meses.forEach(m => selMes.innerHTML += `<option value="${m}">${formatarMesLabel(m)}</option>`);
+
+      const selCentro = document.getElementById('filtroCentroCusto');
+      selCentro.innerHTML = '<option value="TODOS">Todos os Centros</option>';
+      centros.forEach(c => selCentro.innerHTML += `<option value="${c}">${c}</option>`);
+
+      const selTipo = document.getElementById('filtroTipoGasto');
+      selTipo.innerHTML = '<option value="TODOS">Todas as Categorias</option>';
+      tipos.forEach(t => selTipo.innerHTML += `<option value="${t}">${t}</option>`);
+    }
+
+    function resetarFiltros() {
+      document.getElementById('filtroMes').value = 'TODOS';
+      document.getElementById('filtroCentroCusto').value = 'TODOS';
+      document.getElementById('filtroTipoGasto').value = 'TODOS';
+      document.getElementById('filtroNatureza').value = 'TODOS';
+      document.getElementById('buscaTexto').value = '';
+      atualizarDashboard();
+    }
+
+    function obterDadosFiltrados() {
+      const mes = document.getElementById('filtroMes').value;
+      const centro = document.getElementById('filtroCentroCusto').value;
+      const tipo = document.getElementById('filtroTipoGasto').value;
+      const natureza = document.getElementById('filtroNatureza').value;
+      const busca = document.getElementById('buscaTexto').value.toLowerCase().trim();
+
+      return lancamentosFinanceiros.filter(item => {
+        if (mes !== 'TODOS' && item.mes !== mes) return false;
+        if (centro !== 'TODOS' && item.centro_custo !== centro) return false;
+        if (tipo !== 'TODOS' && item.tipo_gasto !== tipo) return false;
+        if (natureza !== 'TODOS' && item.natureza !== natureza) return false;
+        if (busca && !item.descricao.toLowerCase().includes(busca)) return false;
+        return true;
+      });
+    }
+
+    function atualizarDashboard() {
+      dadosAtuaisFiltrados = obterDadosFiltrados();
+
+      // KPIs
+      const receitas = dadosAtuaisFiltrados.filter(d => d.natureza === 'Receita');
+      const despesas = dadosAtuaisFiltrados.filter(d => d.natureza === 'Despesa');
+      const totalReceita = receitas.reduce((acc, d) => acc + d.valor, 0);
+      const totalDespesa = despesas.reduce((acc, d) => acc + d.valor, 0);
+      const resultado = totalReceita - totalDespesa;
+      const margem = totalReceita > 0 ? (resultado / totalReceita) * 100 : 0;
+
+      document.getElementById('kpiReceita').textContent = formatarBRL(totalReceita);
+      document.getElementById('kpiQtdReceita').textContent = `${receitas.length} lançamento(s)`;
+      document.getElementById('kpiDespesa').textContent = formatarBRL(totalDespesa);
+      document.getElementById('kpiQtdDespesa').textContent = `${despesas.length} lançamento(s)`;
+
+      const elResultado = document.getElementById('kpiResultado');
+      elResultado.textContent = formatarBRL(resultado);
+      elResultado.className = `text-2xl font-bold mt-2 ${resultado >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+      const elMargem = document.getElementById('kpiMargem');
+      elMargem.textContent = `${margem.toFixed(1)}%`;
+      elMargem.className = `text-2xl font-bold mt-2 ${margem >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
+
+      atualizarTabela(dadosAtuaisFiltrados);
+      atualizarGraficos(dadosAtuaisFiltrados, totalDespesa);
+    }
+
+    function atualizarTabela(dados) {
+      const tbody = document.getElementById('tabelaLancamentos');
+      if (dados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nenhum lançamento encontrado para os filtros aplicados.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = dados.map(d => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${d.data.split('-').reverse().join('/')}</td>
+          <td class="py-2.5 px-3 font-medium text-slate-800">${d.descricao}</td>
+          <td class="py-2.5 px-3 text-slate-600">${d.centro_custo}</td>
+          <td class="py-2.5 px-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${d.tipo_gasto}</span></td>
+          <td class="py-2.5 px-3 text-right font-semibold whitespace-nowrap ${d.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
+            ${d.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(d.valor)}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function atualizarGraficos(dados, totalDespesaGlobal) {
+      // 1. Evolução Mensal
+      const mesesUnicos = [...new Set(dados.map(d => d.mes))].sort();
+      const labelsMeses = mesesUnicos.map(formatarMesLabel);
+      const serieReceitas = mesesUnicos.map(m => dados.filter(d => d.mes === m && d.natureza === 'Receita').reduce((a, b) => a + b.valor, 0));
+      const serieDespesas = mesesUnicos.map(m => dados.filter(d => d.mes === m && d.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0));
+      const serieResultado = mesesUnicos.map((_, i) => serieReceitas[i] - serieDespesas[i]);
+
+      if (chartEvolucao) chartEvolucao.destroy();
+      chartEvolucao = new Chart(document.getElementById('graficoEvolucao'), {
+        data: {
+          labels: labelsMeses,
+          datasets: [
+            { type: 'bar', label: 'Receitas', data: serieReceitas, backgroundColor: '#10b981', borderRadius: 6 },
+            { type: 'bar', label: 'Despesas', data: serieDespesas, backgroundColor: '#f43f5e', borderRadius: 6 },
+            { type: 'line', label: 'Resultado Líquido', data: serieResultado, borderColor: '#4f46e5', backgroundColor: '#4f46e5', borderWidth: 2.5, tension: 0.3, pointRadius: 5 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (!elements.length) return;
+            const { datasetIndex, index } = elements[0];
+            const mesSelecionado = mesesUnicos[index];
+            const mesLabel = labelsMeses[index];
+            let registros = dados.filter(d => d.mes === mesSelecionado);
+            let subtitulo = `Balanço Completo • ${mesLabel}`;
+            let naturezaFiltro = 'TODOS';
+
+            if (datasetIndex === 0) {
+              registros = registros.filter(d => d.natureza === 'Receita');
+              subtitulo = `Receitas • ${mesLabel}`;
+              naturezaFiltro = 'Receita';
+            } else if (datasetIndex === 1) {
+              registros = registros.filter(d => d.natureza === 'Despesa');
+              subtitulo = `Despesas • ${mesLabel}`;
+              naturezaFiltro = 'Despesa';
+            }
+            abrirModalDrillDown('Evolução Mensal', subtitulo, registros, totalDespesaGlobal, () => {
+              document.getElementById('filtroMes').value = mesSelecionado;
+              document.getElementById('filtroNatureza').value = naturezaFiltro;
+              atualizarDashboard();
+            });
+          },
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // 2. Despesas por Tipo de Gasto
+      const despesasApenas = dados.filter(d => d.natureza === 'Despesa');
+      const tiposMap = {};
+      despesasApenas.forEach(d => tiposMap[d.tipo_gasto] = (tiposMap[d.tipo_gasto] || 0) + d.valor);
+      const labelsTipos = Object.keys(tiposMap);
+      const valoresTipos = Object.values(tiposMap);
+
+      if (chartTipoGasto) chartTipoGasto.destroy();
+      chartTipoGasto = new Chart(document.getElementById('graficoTipoGasto'), {
+        type: 'doughnut',
+        data: {
+          labels: labelsTipos,
+          datasets: [{
+            data: valoresTipos,
+            backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#14b8a6', '#8b5cf6', '#64748b'],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (!elements.length) return;
+            const idx = elements[0].index;
+            const tipoSel = labelsTipos[idx];
+            const registros = despesasApenas.filter(d => d.tipo_gasto === tipoSel);
+            abrirModalDrillDown('Tipo de Gasto', tipoSel, registros, totalDespesaGlobal, () => {
+              document.getElementById('filtroTipoGasto').value = tipoSel;
+              document.getElementById('filtroNatureza').value = 'Despesa';
+              atualizarDashboard();
+            });
+          },
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+
+      // 3. Resultado por Centro de Custo (Receitas - Despesas)
+      const centrosUnicos = [...new Set(dados.map(d => d.centro_custo))];
+      const resultadosCentros = centrosUnicos.map(cc => {
+        const recCC = dados.filter(d => d.centro_custo === cc && d.natureza === 'Receita').reduce((a, b) => a + b.valor, 0);
+        const despCC = dados.filter(d => d.centro_custo === cc && d.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0);
+        return { cc, resultado: recCC - despCC };
+      }).sort((a, b) => b.resultado - a.resultado);
+
+      const labelsCentros = resultadosCentros.map(x => x.cc);
+      const valoresCentros = resultadosCentros.map(x => x.resultado);
+      const coresCentros = valoresCentros.map(v => v >= 0 ? '#10b981' : '#f43f5e');
+
+      if (chartCentroCusto) chartCentroCusto.destroy();
+      chartCentroCusto = new Chart(document.getElementById('graficoCentroCusto'), {
+        type: 'bar',
+        data: {
+          labels: labelsCentros,
+          datasets: [{
+            label: 'Resultado Líquido (R$)',
+            data: valoresCentros,
+            backgroundColor: coresCentros,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (!elements.length) return;
+            const idx = elements[0].index;
+            const centroSel = labelsCentros[idx];
+            const registros = dados.filter(d => d.centro_custo === centroSel);
+            abrirModalDrillDown('Resultado por Centro de Custo', centroSel, registros, totalDespesaGlobal, () => {
+              document.getElementById('filtroCentroCusto').value = centroSel;
+              document.getElementById('filtroNatureza').value = 'TODOS';
+              atualizarDashboard();
+            });
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Resultado: ${formatarBRL(ctx.raw)}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function abrirModalDrillDown(badge, titulo, registros, baseComparacao, callbackAplicarFiltro) {
+      document.getElementById('modalBadge').textContent = badge;
+      document.getElementById('modalTitulo').textContent = titulo;
+
+      const rec = registros.filter(r => r.natureza === 'Receita').reduce((a, b) => a + b.valor, 0);
+      const desp = registros.filter(r => r.natureza === 'Despesa').reduce((a, b) => a + b.valor, 0);
+      const saldo = rec - desp;
+      const pct = baseComparacao > 0 ? ((desp > 0 ? desp : rec) / baseComparacao) * 100 : 100;
+
+      document.getElementById('modalReceita').textContent = formatarBRL(rec);
+      document.getElementById('modalDespesa').textContent = formatarBRL(desp);
+      document.getElementById('modalSaldo').textContent = formatarBRL(saldo);
+      document.getElementById('modalPercentual').textContent = `${pct.toFixed(1)}%`;
+      document.getElementById('modalContador').textContent = `${registros.length} lançamento(s) neste recorte`;
+
+      const tbody = document.getElementById('modalTabelaCorpo');
+      tbody.innerHTML = registros.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.data.split('-').reverse().join('/')}</td>
+          <td class="py-2 px-3 font-medium text-slate-800">${r.descricao}</td>
+          <td class="py-2 px-3 text-slate-600">${r.centro_custo}</td>
+          <td class="py-2 px-3 text-slate-500 text-xs">${r.tipo_gasto}</td>
+          <td class="py-2 px-3 text-right font-semibold whitespace-nowrap ${r.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
+            ${r.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(r.valor)}
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('btnAplicarFiltroModal').onclick = () => {
+        callbackAplicarFiltro();
+        fecharModal();
+      };
+
+      const modal = document.getElementById('modalDrillDown');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function fecharModal() {
+      const modal = document.getElementById('modalDrillDown');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function fecharModalSeFora(event) {
+      if (event.target.id === 'modalDrillDown') fecharModal();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fecharModal();
+    });
+
+    function exportarCSV() {
+      const cabecalho = ['ID;Data;Mes;Descricao;Centro_Custo;Tipo_Gasto;Natureza;Valor'];
+      const linhas = dadosAtuaisFiltrados.map(d =>
+        `${d.id};${d.data};${d.mes};"${d.descricao}";"${d.centro_custo}";"${d.tipo_gasto}";${d.natureza};${d.valor.toFixed(2).replace('.', ',')}`
+      );
+      const blob = new Blob(["\uFEFF" + cabecalho.concat(linhas).join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'indicadores_financeiros_filtrado.csv';
+      a.click();
+    }
+
+    carregarDadosJSON(false);
+  </script>
+</body>
+</html>
