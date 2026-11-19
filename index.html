@@ -292,7 +292,7 @@
 
   <!-- Modal Pop-up Drill-Down com Alinhamento Padronizado e Ordenação por Coluna -->
   <div id="modalDrillDown" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-md p-4" onclick="fecharModalSeFora(event)">
-    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-enter" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-6xl w-[96vw] max-h-[90vh] flex flex-col overflow-hidden modal-enter" onclick="event.stopPropagation()">
       <!-- Cabeçalho Modal -->
       <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between gap-4 border-b border-slate-800">
         <div class="min-w-0">
@@ -326,34 +326,34 @@
       <div class="px-6 py-4 overflow-y-auto flex-1">
         <div class="border border-slate-200 rounded-xl overflow-hidden">
           <div class="overflow-x-auto max-h-[46vh]">
-            <table class="w-full text-left border-collapse text-sm table-fixed min-w-[680px]">
+            <table class="w-full text-left border-collapse text-sm table-fixed min-w-[920px]">
               <thead class="bg-slate-100 sticky top-0 z-10 text-[11px] uppercase tracking-wider text-slate-600 border-b border-slate-200">
                 <tr>
-                  <th onclick="ordenarTabelaModal('data')" class="sortable py-2.5 px-3.5 w-[13%] text-left">
+                  <th onclick="ordenarTabelaModal('data')" class="sortable py-2.5 px-3.5 w-[10%] text-left">
                     <div class="flex items-center gap-1">
                       <span>Data</span>
                       <span id="sort-modal-data" class="text-indigo-600 font-bold">▼</span>
                     </div>
                   </th>
-                  <th onclick="ordenarTabelaModal('descricao')" class="sortable py-2.5 px-3.5 w-[33%] text-left">
+                  <th onclick="ordenarTabelaModal('descricao')" class="sortable py-2.5 px-3.5 w-[28%] text-left">
                     <div class="flex items-center gap-1">
                       <span>Descrição</span>
                       <span id="sort-modal-descricao" class="text-slate-400">⇅</span>
                     </div>
                   </th>
-                  <th onclick="ordenarTabelaModal('centro_custo')" class="sortable py-2.5 px-3.5 w-[20%] text-left">
+                  <th onclick="ordenarTabelaModal('centro_custo')" class="sortable py-2.5 px-3.5 w-[27%] text-left">
                     <div class="flex items-center gap-1">
                       <span>Centro de Custo</span>
                       <span id="sort-modal-centro_custo" class="text-slate-400">⇅</span>
                     </div>
                   </th>
-                  <th onclick="ordenarTabelaModal('tipo_gasto')" class="sortable py-2.5 px-3.5 w-[18%] text-left">
+                  <th onclick="ordenarTabelaModal('tipo_gasto')" class="sortable py-2.5 px-3.5 w-[21%] text-left">
                     <div class="flex items-center gap-1">
                       <span>Categoria</span>
                       <span id="sort-modal-tipo_gasto" class="text-slate-400">⇅</span>
                     </div>
                   </th>
-                  <th onclick="ordenarTabelaModal('valor')" class="sortable py-2.5 px-3.5 w-[16%] text-right">
+                  <th onclick="ordenarTabelaModal('valor')" class="sortable py-2.5 px-3.5 w-[14%] text-right">
                     <div class="flex items-center justify-end gap-1">
                       <span id="sort-modal-valor" class="text-slate-400">⇅</span>
                       <span>Valor</span>
@@ -1046,7 +1046,7 @@
           <td class="py-2.5 px-3.5 text-slate-500 whitespace-nowrap tabular-nums align-middle">${r.data.split('-').reverse().join('/')}</td>
           <td class="py-2.5 px-3.5 font-medium text-slate-800 align-middle truncate" title="${r.descricao}">${r.descricao}</td>
           <td class="py-2.5 px-3.5 text-slate-600 align-middle truncate" title="${r.centro_custo}">${r.centro_custo}</td>
-          <td class="py-2.5 px-3.5 text-slate-500 text-xs align-middle truncate" title="${r.tipo_gasto}">${r.tipo_gasto}</td>
+          <td class="py-2.5 px-3.5 align-middle truncate" title="${r.tipo_gasto}"><span class="inline-block max-w-full truncate text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">${r.tipo_gasto}</span></td>
           <td class="py-2.5 px-3.5 text-right font-semibold whitespace-nowrap tabular-nums align-middle ${r.natureza === 'Receita' ? 'text-emerald-600' : 'text-rose-600'}">
             ${r.natureza === 'Receita' ? '+' : '-'} ${formatarBRL(r.valor)}
           </td>
