@@ -129,18 +129,10 @@
         </div>
       </div>
 
-      <!-- Faixa dinâmica gerada pelos filtros com resumo e acesso rápido à lista de detalhamento -->
-      <div id="barraResumoFiltros" class="hidden pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-        <div class="flex items-center flex-wrap gap-2">
-          <span class="font-semibold text-slate-600 uppercase tracking-wider">Recorte Ativo:</span>
-          <div id="tagsFiltrosAtivos" class="flex items-center flex-wrap gap-1.5"></div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="resumoContagemFiltro" class="text-slate-500 font-medium tabular-nums"></span>
-          <button onclick="abrirListaDetalhamentoFiltros()" class="text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2">
-            Abrir Lista de Detalhamento (Pop-up) &rarr;
-          </button>
-        </div>
+      <!-- Faixa dinâmica gerada pelos filtros com resumo do recorte ativo -->
+      <div id="barraResumoFiltros" class="hidden pt-3 border-t border-slate-100 flex items-center flex-wrap gap-2 text-xs">
+        <span class="font-semibold text-slate-600 uppercase tracking-wider">Recorte Ativo:</span>
+        <div id="tagsFiltrosAtivos" class="flex items-center flex-wrap gap-1.5"></div>
       </div>
     </section>
 
@@ -232,9 +224,8 @@
             <tr>
               <th class="py-3 px-4 rounded-tl-lg">Estrutura da Demonstração do Resultado (DRE)</th>
               <th class="py-3 px-4 text-center w-28">Qtd. Itens</th>
-              <th class="py-3 px-4 text-right w-40">Valor Acumulado</th>
               <th class="py-3 px-4 text-right w-28">AV (%)</th>
-              <th class="py-3 px-4 text-center w-32 rounded-tr-lg">Ação</th>
+              <th class="py-3 px-4 text-right w-44 rounded-tr-lg">Valor Acumulado</th>
             </tr>
           </thead>
           <tbody id="tabelaDRECorpo" class="divide-y divide-slate-200"></tbody>
@@ -552,7 +543,6 @@
     function atualizarBarraResumoFiltros() {
       const barra = document.getElementById('barraResumoFiltros');
       const tagsContainer = document.getElementById('tagsFiltrosAtivos');
-      const resumoContagem = document.getElementById('resumoContagemFiltro');
 
       const mes = document.getElementById('filtroMes').value;
       const centro = document.getElementById('filtroCentroCusto').value;
@@ -576,7 +566,6 @@
       tagsContainer.innerHTML = tags.map(t =>
         `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full font-medium">${t}</span>`
       ).join('');
-      resumoContagem.textContent = `${dadosAtuaisFiltrados.length} lançamento(s) filtrados`;
     }
 
     function abrirListaDetalhamentoFiltros() {
@@ -747,7 +736,7 @@
     function renderizarEstruturaDRE(dados) {
       const tbody = document.getElementById('tabelaDRECorpo');
       if (dados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Nenhum lançamento encontrado para compor a DRE nos filtros aplicados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Nenhum lançamento encontrado para compor a DRE nos filtros aplicados.</td></tr>`;
         return;
       }
 
@@ -797,16 +786,14 @@
         const total = soma(arr);
         const key = registrarBucket(`${codigo} ${titulo}`, arr);
         const subcategorias = agruparSubcategorias(arr);
+        const clickAttr = arr.length > 0 ? `onclick="abrirDrillDownDRE('${key}')" class="bg-white hover:bg-indigo-50/40 font-semibold text-slate-800 cursor-pointer transition"` : `class="bg-white font-semibold text-slate-800"`;
 
         let htmlGrupo = `
-          <tr class="bg-white hover:bg-slate-50 font-semibold text-slate-800">
+          <tr ${clickAttr}>
             <td class="py-3 px-4">${codigo} ${titulo}</td>
             <td class="py-3 px-4 text-center text-xs text-slate-500 tabular-nums">${arr.length}</td>
-            <td class="py-3 px-4 text-right tabular-nums ${corValor}">${sinal === '-' && total > 0 ? '- ' : ''}${formatarBRL(total)}</td>
             <td class="py-3 px-4 text-right text-xs text-slate-500 tabular-nums">${fmtAV(sinal === '-' ? -total : total)}</td>
-            <td class="py-3 px-4 text-center">
-              ${arr.length > 0 ? `<button onclick="abrirDrillDownDRE('${key}')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition">Detalhar</button>` : '<span class="text-xs text-slate-300">—</span>'}
-            </td>
+            <td class="py-3 px-4 text-right tabular-nums ${corValor}">${sinal === '-' && total > 0 ? '- ' : ''}${formatarBRL(total)}</td>
           </tr>
         `;
 
@@ -814,17 +801,14 @@
           const subTotal = soma(subItens);
           const subKey = registrarBucket(`${codigo} ${titulo} • ${subNome}`, subItens);
           htmlGrupo += `
-            <tr class="bg-slate-50/60 hover:bg-slate-100/70 text-slate-600 text-xs">
+            <tr onclick="abrirDrillDownDRE('${subKey}')" class="bg-slate-50/60 hover:bg-indigo-50/50 text-slate-600 text-xs cursor-pointer transition">
               <td class="py-2 pl-9 pr-4 flex items-center gap-2">
                 <span class="text-slate-400">↳</span>
                 <span>${subNome}</span>
               </td>
               <td class="py-2 px-4 text-center text-slate-400 tabular-nums">${subItens.length}</td>
-              <td class="py-2 px-4 text-right tabular-nums ${sinal === '-' ? 'text-rose-600' : 'text-emerald-600'}">${sinal === '-' ? '- ' : ''}${formatarBRL(subTotal)}</td>
               <td class="py-2 px-4 text-right text-slate-400 tabular-nums">${fmtAV(sinal === '-' ? -subTotal : subTotal)}</td>
-              <td class="py-2 px-4 text-center">
-                <button onclick="abrirDrillDownDRE('${subKey}')" class="text-[11px] font-medium text-slate-600 hover:text-indigo-700 underline underline-offset-2">Ver itens</button>
-              </td>
+              <td class="py-2 px-4 text-right tabular-nums ${sinal === '-' ? 'text-rose-600' : 'text-emerald-600'}">${sinal === '-' ? '- ' : ''}${formatarBRL(subTotal)}</td>
             </tr>
           `;
         });
@@ -840,9 +824,8 @@
           <tr class="${bg}">
             <td class="py-3 px-4">${titulo}</td>
             <td class="py-3 px-4 text-center text-xs opacity-70">—</td>
-            <td class="py-3 px-4 text-right tabular-nums ${corValorFinal}">${formatarBRL(valor)}</td>
             <td class="py-3 px-4 text-right text-xs tabular-nums ${destaqueFinal ? 'text-slate-300' : 'text-slate-600'}">${fmtAV(valor)}</td>
-            <td class="py-3 px-4 text-center text-xs opacity-60">Subtotal</td>
+            <td class="py-3 px-4 text-right tabular-nums ${corValorFinal}">${formatarBRL(valor)}</td>
           </tr>
         `;
       };
