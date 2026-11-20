@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurações da Conta • API &amp; Integrações • FinPulse Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Cabeçalho SaaS Executivo -->
+  <header class="bg-slate-950 text-white border-b border-slate-800/80 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </a>
+        <div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 class="text-xl font-bold tracking-tight text-white">FinPulse <span class="text-indigo-400 font-semibold">Analytics</span></h1>
+            <span class="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
+              Configurações da Conta
+            </span>
+          </div>
+          <p id="subtituloUsuario" class="text-xs text-slate-400 mt-0.5">Gerenciamento de Integrações e Credenciais de API</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <a href="index.html" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-2">
+          <span>&larr; Voltar ao Dashboard</span>
+        </a>
+        <button onclick="encerrarSessao()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg transition">
+          Sair
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+      <!-- Navegação Lateral da Conta (Somente API ativo nesta etapa) -->
+      <aside class="lg:col-span-1 space-y-2">
+        <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm space-y-1">
+          <div class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Conta &amp; Workspace
+          </div>
+          <button type="button" class="w-full text-left px-3 py-2.5 rounded-lg bg-indigo-50 text-indigo-700 font-semibold text-sm flex items-center justify-between">
+            <span>Integrações &amp; API</span>
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-xs space-y-2">
+          <p class="font-semibold text-slate-700 uppercase tracking-wider text-[11px]">Ambiente Ativo</p>
+          <p id="infoEmpresaLateral" class="font-bold text-slate-900">GeoTop Engenharia</p>
+          <p id="infoEmailLateral" class="text-slate-500 truncate">controladoria@geotop.com.br</p>
+        </div>
+      </aside>
+
+      <!-- Painel Principal: Configuração de API -->
+      <section class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Configuração de API &amp; Fonte de Dados</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Defina o provedor ERP ou endpoint JSON utilizado pelo painel financeiro.</p>
+          </div>
+          <span id="badgeStatusApi" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            Aguardando configuração
+          </span>
+        </div>
+
+        <form id="formConfigApi" onsubmit="salvarConfiguracaoApi(event)" class="p-6 space-y-5">
+          <div id="feedbackApi" class="hidden rounded-xl px-4 py-3 text-xs font-medium border"></div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="apiProvedor" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Provedor / Origem</label>
+              <select id="apiProvedor" onchange="aoMudarProvedor()" class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="json_local">Arquivo JSON Local (./base_dados_financeiros.json)</option>
+                <option value="omie">Omie ERP (API v1)</option>
+                <option value="conta_azul">Conta Azul (API REST)</option>
+                <option value="custom_rest">API REST Customizada (Schema FinPulse)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="apiFrequencia" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Frequência de Sincronização</label>
+              <select id="apiFrequencia" class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="manual">Manual (sob demanda no painel)</option>
+                <option value="1h">Automática a cada 1 hora</option>
+                <option value="6h">Automática a cada 6 horas</option>
+                <option value="diaria">Diária às 06:00 (BRT)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="apiEndpoint" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Endpoint Base / URL da Fonte JSON</label>
+            <input type="text" id="apiEndpoint" required value="./base_dados_financeiros.json" placeholder="https://api.suaempresa.com.br/v1/lancamentos" class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <p class="text-[11px] text-slate-400 mt-1">No painel principal, o botão "Atualizar Base" utilizará esta URL quando salva.</p>
+          </div>
+
+          <div id="blocoCredenciais" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <label for="apiKey" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">App Key / Client ID</label>
+              <input type="text" id="apiKey" placeholder="Ex.: 3849201948201" class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+
+            <div>
+              <label for="apiSecret" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">App Secret / Bearer Token</label>
+              <div class="relative">
+                <input type="password" id="apiSecret" placeholder="••••••••••••••••••••••••" class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <button type="button" onclick="alternarSegredo()" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600" aria-label="Mostrar segredo">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-800">
+            <strong>Nota de Arquitetura (Etapa 2 &rarr; Etapa 3):</strong> Nesta etapa de protótipo frontend, os parâmetros são salvos localmente no navegador para integração imediata com o painel. Na Etapa 3 (Backend Proxy), <code>App Key</code> e <code>App Secret</code> serão armazenados exclusivamente no servidor com criptografia em repouso.
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <button type="button" onclick="testarConexaoApi()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition">
+              Testar Conexão
+            </button>
+
+            <div class="flex items-center gap-2.5">
+              <button type="button" onclick="restaurarPadraoApi()" class="text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-2">
+                Restaurar Padrão
+              </button>
+              <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-lg transition shadow-sm">
+                Salvar Configurações de API
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function obterSessao() {
+      const raw = localStorage.getItem('finpulse_session') || sessionStorage.getItem('finpulse_session');
+      return raw ? JSON.parse(raw) : null;
+    }
+
+    function encerrarSessao() {
+      localStorage.removeItem('finpulse_session');
+      sessionStorage.removeItem('finpulse_session');
+      window.location.href = 'login.html';
+    }
+
+    function alternarSegredo() {
+      const input = document.getElementById('apiSecret');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function aoMudarProvedor() {
+      const prov = document.getElementById('apiProvedor').value;
+      const endpoint = document.getElementById('apiEndpoint');
+      const presets = {
+        json_local: './base_dados_financeiros.json',
+        omie: 'https://app.omie.com.br/api/v1/financas/contareceber/',
+        conta_azul: 'https://api.contaazul.com/v1/sales',
+        custom_rest: 'https://api.suaempresa.com.br/v1/indicadores-financeiros'
+      };
+      endpoint.value = presets[prov] || './base_dados_financeiros.json';
+    }
+
+    function atualizarBadgeStatus(conectado, texto) {
+      const badge = document.getElementById('badgeStatusApi');
+      if (conectado) {
+        badge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span>${texto}`;
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span>${texto}`;
+      }
+    }
+
+    function mostrarFeedback(sucesso, mensagem) {
+      const box = document.getElementById('feedbackApi');
+      box.className = sucesso
+        ? 'rounded-xl px-4 py-3 text-xs font-medium border bg-emerald-50 border-emerald-200 text-emerald-800'
+        : 'rounded-xl px-4 py-3 text-xs font-medium border bg-rose-50 border-rose-200 text-rose-800';
+      box.textContent = mensagem;
+      box.classList.remove('hidden');
+    }
+
+    async function testarConexaoApi() {
+      const prov = document.getElementById('apiProvedor').value;
+      const endpoint = document.getElementById('apiEndpoint').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+
+      if (!endpoint) {
+        atualizarBadgeStatus(false, 'URL inválida');
+        mostrarFeedback(false, 'Informe um Endpoint Base ou caminho de arquivo JSON válido antes de testar.');
+        return;
+      }
+
+      if (prov === 'json_local') {
+        try {
+          const urlAlvo = new URL(endpoint, window.location.href).href;
+          if (window.location.protocol === 'file:') {
+            atualizarBadgeStatus(true, 'Modo Local (Upload Manual)');
+            mostrarFeedback(true, 'Abertura local via file:// detectada. No dashboard principal, utilize o botão "Carregar JSON" para importar o arquivo diretamente.');
+            return;
+          }
+          const resp = await fetch(`${urlAlvo}?t=${Date.now()}`, { cache: 'no-store' });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          if (!Array.isArray(data)) throw new Error('JSON sem array na raiz');
+          atualizarBadgeStatus(true, `Conectado • ${data.length} registros`);
+          mostrarFeedback(true, `Conexão validada com sucesso! A fonte respondeu com ${data.length} lançamentos prontos para a DRE.`);
+        } catch (err) {
+          atualizarBadgeStatus(false, 'Falha na leitura');
+          mostrarFeedback(false, `Não foi possível acessar ${endpoint}: ${err.message}.`);
+        }
+        return;
+      }
+
+      // Validação estrutural para provedores ERP / REST externos na Etapa 2
+      if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+        atualizarBadgeStatus(false, 'Protocolo inválido');
+        mostrarFeedback(false, 'Endpoints externos devem iniciar com https:// ou http://.');
+        return;
+      }
+
+      if (!apiKey) {
+        atualizarBadgeStatus(false, 'Credencial ausente');
+        mostrarFeedback(false, 'Preencha o campo App Key / Client ID para validar a configuração deste provedor.');
+        return;
+      }
+
+      atualizarBadgeStatus(true, 'Configuração Validada');
+      mostrarFeedback(true, `Parâmetros estruturais validados para ${prov.toUpperCase()} (${endpoint}). Pronto para integração com o proxy backend.`);
+    }
+
+    function salvarConfiguracaoApi(event) {
+      event.preventDefault();
+      const config = {
+        provedor: document.getElementById('apiProvedor').value,
+        frequencia: document.getElementById('apiFrequencia').value,
+        endpoint: document.getElementById('apiEndpoint').value.trim(),
+        appKey: document.getElementById('apiKey').value.trim(),
+        appSecret: document.getElementById('apiSecret').value,
+        atualizadoEm: new Date().toISOString()
+      };
+      localStorage.setItem('finpulse_api_config', JSON.stringify(config));
+      atualizarBadgeStatus(true, 'Configuração Salva');
+      mostrarFeedback(true, 'Configurações de API salvas com sucesso! O painel principal utilizará esta configuração.');
+    }
+
+    function restaurarPadraoApi() {
+      localStorage.removeItem('finpulse_api_config');
+      document.getElementById('apiProvedor').value = 'json_local';
+      document.getElementById('apiFrequencia').value = 'manual';
+      document.getElementById('apiEndpoint').value = './base_dados_financeiros.json';
+      document.getElementById('apiKey').value = '';
+      document.getElementById('apiSecret').value = '';
+      atualizarBadgeStatus(true, 'Padrão Restaurado');
+      mostrarFeedback(true, 'Configuração restaurada para a base padrão (./base_dados_financeiros.json).');
+    }
+
+    // Inicialização da página
+    (function init() {
+      const sessao = obterSessao();
+      if (!sessao) {
+        window.location.href = 'login.html';
+        return;
+      }
+      document.getElementById('subtituloUsuario').textContent = `${sessao.empresa} • ${sessao.nome}`;
+      document.getElementById('infoEmpresaLateral').textContent = sessao.empresa;
+      document.getElementById('infoEmailLateral').textContent = sessao.email;
+
+      const saved = JSON.parse(localStorage.getItem('finpulse_api_config') || 'null');
+      if (saved) {
+        document.getElementById('apiProvedor').value = saved.provedor || 'json_local';
+        document.getElementById('apiFrequencia').value = saved.frequencia || 'manual';
+        document.getElementById('apiEndpoint').value = saved.endpoint || './base_dados_financeiros.json';
+        document.getElementById('apiKey').value = saved.appKey || '';
+        document.getElementById('apiSecret').value = saved.appSecret || '';
+        atualizarBadgeStatus(true, 'Configuração Ativa');
+      }
+    })();
+  </script>
+</body>
+</html>
